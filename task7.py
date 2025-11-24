@@ -1,69 +1,71 @@
-###file=open("stock_data.csv","r")
-'''print(file.read())
-file.close()
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
 
+# ------------------------------------
+# STEP 1: Create SQLite DB + Connect
+# ------------------------------------
+conn = sqlite3.connect("sales_data.db")
+cursor = conn.cursor()
 
-empty =(1,2, 3,4,)
+# ------------------------------------
+# STEP 2: Create Sales Table
+# ------------------------------------
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS sales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product TEXT,
+    quantity INTEGER,
+    price REAL
+)
+""")
 
-print(type(empty))
+# ------------------------------------
+# STEP 3: Insert Sample Data
+# ------------------------------------
+cursor.execute("DELETE FROM sales")  # clear old data
 
-print(list(empty))
+sample_data = [
+    ("Laptop", 5, 55000),
+    ("Laptop", 3, 54000),
+    ("Mobile", 10, 15000),
+    ("Mobile", 8, 16000),
+    ("Headphones", 15, 1500),
+    ("Headphones", 20, 1800)
+]
 
-diff_data_ypes ="sumithra",12,True
-a,b,c=diff_data_ypes
-print(a)
-print(b)
-print(c)
+cursor.executemany("INSERT INTO sales (product, quantity, price) VALUES (?, ?, ?)", sample_data)
+conn.commit()
 
-a={12,23,45,56,67}
-b={23,56,78,90,56}
+# ------------------------------------
+# STEP 4: Run SQL Query
+# ------------------------------------
+query = """
+SELECT 
+    product,
+    SUM(quantity) AS total_quantity,
+    SUM(quantity * price) AS revenue
+FROM sales
+GROUP BY product
+"""
 
-set=a.union(b)
-print(set)
+df = pd.read_sql_query(query, conn)
+print("\n=== SALES SUMMARY ===\n")
+print(df)
 
-set_intersection=a.intersection(b)
-print(set_intersection)'''
+# ------------------------------------
+# STEP 5: Bar Chart
+# ------------------------------------
+plt.figure(figsize=(7,5))
+plt.bar
+import matplotlib
+matplotlib.use('TkAgg')
 
-a={12,23,45,56,67}
-b={23,56,78,90,56}
-
-a.intersection(b)
-print(a)
-
-print(type(a))
-c={}
-print(type(c))
-
-
-student={"name":"sumithra","age":34,"father_name":"guna "}
-print(student)
-student_copy=student
-print(student)
-
-print(student_copy)
-
-student_copy=student.copy()
-student["name"]="sumithra1"
-print(student)
-
-print(student_copy)
-
-for key in student.keys():
-    print(key)
-
-for value in student.values():
-    print(value)
-
-for value,key in student.items():
-    print(value,key)
-
-
-students={
-     "student1":{"name":"nisha" ,"age":"45"},
-     "student2":{"name":"shivasharan" ,"age":"89"}
- }
-print(students)
-print(students ["student1"]["name"])
-print(students ["student1"]["age"])
-squares={x:x**2 for x in range (5)}
-print(squares)
+plt.figure(figsize=(7,5))
+plt.bar(df["product"], df["revenue"])
+plt.xlabel("Product")
+plt.ylabel("Revenue")
+plt.title("Revenue by Product")
+plt.tight_layout()
+plt.savefig("sales_chart.png")
+plt.show()
